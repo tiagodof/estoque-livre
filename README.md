@@ -1,6 +1,6 @@
 # 📦 Estoque Livre
 
-> **Free and open-source inventory management webapp** for small businesses and NGOs — built with React, Node.js and SQLite. No subscription. No hidden fees. Just works.
+> **Free and open-source inventory management webapp** for small businesses and NGOs, built with React, Node.js and SQLite. No subscription. No hidden fees. Just works.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org)
@@ -103,4 +103,4 @@ Change these immediately after first login.
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
