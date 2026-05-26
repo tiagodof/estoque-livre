@@ -4,16 +4,35 @@ const { authenticate } = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /api/products
+// GET /api/products?search=&category_id=&low_stock=
 router.get("/", authenticate, (req, res) => {
   const db = getDb();
-  const products = db.prepare(`
+  const { search = "", category_id, low_stock } = req.query;
+
+  let query = `
     SELECT p.*, c.name AS category_name, s.name AS supplier_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     LEFT JOIN suppliers s ON p.supplier_id = s.id
-    ORDER BY p.name
-  `).all();
+    WHERE 1=1
+  `;
+  const params = [];
+
+  if (search) {
+    query += " AND (p.name LIKE ? OR p.sku LIKE ?)";
+    params.push(`%${search}%`, `%${search}%`);
+  }
+  if (category_id) {
+    query += " AND p.category_id = ?";
+    params.push(category_id);
+  }
+  if (low_stock === "true") {
+    query += " AND p.stock_quantity <= p.min_stock";
+  }
+
+  query += " ORDER BY p.name";
+
+  const products = db.prepare(query).all(...params);
   res.json(products);
 });
 
@@ -29,7 +48,13 @@ router.get("/low-stock", authenticate, (req, res) => {
 // GET /api/products/:id
 router.get("/:id", authenticate, (req, res) => {
   const db = getDb();
-  const product = db.prepare("SELECT * FROM products WHERE id = ?").get(req.params.id);
+  const product = db.prepare(`
+    SELECT p.*, c.name AS category_name, s.name AS supplier_name
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    LEFT JOIN suppliers s ON p.supplier_id = s.id
+    WHERE p.id = ?
+  `).get(req.params.id);
   if (!product) return res.status(404).json({ error: "Product not found" });
   res.json(product);
 });
@@ -57,17 +82,20 @@ router.post("/", authenticate, (req, res) => {
 router.put("/:id", authenticate, (req, res) => {
   const { name, description, category_id, supplier_id, unit_price, min_stock } = req.body;
   const db = getDb();
-  db.prepare(`
+  const result = db.prepare(`
     UPDATE products SET name=?, description=?, category_id=?, supplier_id=?, unit_price=?, min_stock=?, updated_at=CURRENT_TIMESTAMP
     WHERE id=?
   `).run(name, description, category_id, supplier_id, unit_price, min_stock, req.params.id);
+
+  if (result.changes === 0) return res.status(404).json({ error: "Product not found" });
   res.json({ message: "Product updated" });
 });
 
 // DELETE /api/products/:id
 router.delete("/:id", authenticate, (req, res) => {
   const db = getDb();
-  db.prepare("DELETE FROM products WHERE id = ?").run(req.params.id);
+  const result = db.prepare("DELETE FROM products WHERE id = ?").run(req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: "Product not found" });
   res.json({ message: "Product deleted" });
 });
 
