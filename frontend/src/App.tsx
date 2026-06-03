@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import {
   Package, TrendingDown, TrendingUp, AlertTriangle,
-  BarChart2, Users, Truck, LogOut
+  BarChart2, Truck, LogOut, LayoutDashboard
 } from "lucide-react";
 import axios from "axios";
+import ProductsPage from "./pages/ProductsPage";
+import SuppliersPage from "./pages/SuppliersPage";
+import MovementsPage from "./pages/MovementsPage";
 
 const API = axios.create({ baseURL: "http://localhost:3001/api" });
 
@@ -20,12 +23,22 @@ interface Summary {
   totalMovements: number;
 }
 
+type Page = "dashboard" | "products" | "movements" | "suppliers";
+
+const NAV_ITEMS: { id: Page; label: string; icon: React.ReactNode }[] = [
+  { id: "dashboard",  label: "Dashboard",  icon: <LayoutDashboard className="w-4 h-4" /> },
+  { id: "products",   label: "Products",   icon: <Package className="w-4 h-4" /> },
+  { id: "movements",  label: "Movements",  icon: <TrendingUp className="w-4 h-4" /> },
+  { id: "suppliers",  label: "Suppliers",  icon: <Truck className="w-4 h-4" /> },
+];
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [summary, setSummary] = useState<Summary | null>(null);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [page, setPage] = useState<Page>("dashboard");
 
   useEffect(() => {
     if (token) {
@@ -54,6 +67,7 @@ export default function App() {
     localStorage.removeItem("token");
     setToken("");
     setSummary(null);
+    setPage("dashboard");
   }
 
   if (!token) {
@@ -93,46 +107,58 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      {/* Header */}
-      <header className="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-slate-900 text-white flex">
+      {/* Sidebar */}
+      <aside className="w-56 bg-slate-800 border-r border-slate-700 flex flex-col shrink-0">
+        <div className="flex items-center gap-2 px-5 py-5 border-b border-slate-700">
           <Package className="w-6 h-6 text-emerald-400" />
-          <span className="font-bold text-xl">Estoque Livre</span>
+          <span className="font-bold text-lg">Estoque Livre</span>
         </div>
-        <button onClick={handleLogout} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
-          <LogOut className="w-4 h-4" />
-          Sign out
-        </button>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
-
-        {/* Summary cards */}
-        {summary && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <SummaryCard icon={<Package className="w-5 h-5 text-blue-400" />}  label="Total Products"  value={summary.totalProducts} />
-            <SummaryCard icon={<BarChart2 className="w-5 h-5 text-emerald-400" />} label="Stock Value" value={`€${summary.totalValue.toFixed(2)}`} />
-            <SummaryCard icon={<AlertTriangle className="w-5 h-5 text-amber-400" />} label="Low Stock" value={summary.lowStockCount} highlight={summary.lowStockCount > 0} />
-            <SummaryCard icon={<TrendingUp className="w-5 h-5 text-purple-400" />} label="Movements" value={summary.totalMovements} />
-          </div>
-        )}
-
-        {/* Navigation placeholder */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: <Package />,       label: "Products" },
-            { icon: <TrendingDown />,  label: "Stock In" },
-            { icon: <TrendingUp />,    label: "Stock Out" },
-            { icon: <Truck />,         label: "Suppliers" },
-          ].map((item) => (
-            <button key={item.label} className="bg-slate-800 border border-slate-700 hover:border-emerald-500 rounded-xl p-5 flex flex-col items-center gap-3 text-slate-300 hover:text-white transition-all">
-              <span className="text-emerald-400">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
+        <nav className="flex-1 p-3 space-y-1">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setPage(item.id)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                page === item.id
+                  ? "bg-emerald-500/20 text-emerald-400"
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              {item.icon}
+              {item.label}
             </button>
           ))}
+        </nav>
+        <div className="p-3 border-t border-slate-700">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
         </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-auto">
+        {page === "dashboard" && (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
+            {summary && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <SummaryCard icon={<Package className="w-5 h-5 text-blue-400" />}  label="Total Products"  value={summary.totalProducts} />
+                <SummaryCard icon={<BarChart2 className="w-5 h-5 text-emerald-400" />} label="Stock Value" value={`€${summary.totalValue.toFixed(2)}`} />
+                <SummaryCard icon={<AlertTriangle className="w-5 h-5 text-amber-400" />} label="Low Stock" value={summary.lowStockCount} highlight={summary.lowStockCount > 0} />
+                <SummaryCard icon={<TrendingUp className="w-5 h-5 text-purple-400" />} label="Movements" value={summary.totalMovements} />
+              </div>
+            )}
+          </div>
+        )}
+        {page === "products"  && <ProductsPage />}
+        {page === "movements" && <MovementsPage />}
+        {page === "suppliers" && <SuppliersPage />}
       </main>
     </div>
   );
