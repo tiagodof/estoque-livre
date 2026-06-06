@@ -7,6 +7,7 @@ import axios from "axios";
 import ProductsPage from "./pages/ProductsPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import MovementsPage from "./pages/MovementsPage";
+import ReportsPage from "./pages/ReportsPage";
 
 const API = axios.create({ baseURL: "http://localhost:3001/api" });
 
@@ -23,13 +24,14 @@ interface Summary {
   totalMovements: number;
 }
 
-type Page = "dashboard" | "products" | "movements" | "suppliers";
+type Page = "dashboard" | "products" | "movements" | "suppliers" | "reports";
 
 const NAV_ITEMS: { id: Page; label: string; icon: React.ReactNode }[] = [
   { id: "dashboard",  label: "Dashboard",  icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: "products",   label: "Products",   icon: <Package className="w-4 h-4" /> },
   { id: "movements",  label: "Movements",  icon: <TrendingUp className="w-4 h-4" /> },
   { id: "suppliers",  label: "Suppliers",  icon: <Truck className="w-4 h-4" /> },
+  { id: "reports",    label: "Reports",    icon: <BarChart2 className="w-4 h-4" /> },
 ];
 
 export default function App() {
@@ -159,6 +161,7 @@ export default function App() {
         {page === "products"  && <ProductsPage />}
         {page === "movements" && <MovementsPage />}
         {page === "suppliers" && <SuppliersPage />}
+        {page === "reports"   && <ReportsPage />}
       </main>
     </div>
   );
